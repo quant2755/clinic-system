@@ -1,4 +1,4 @@
-name: Java CI with Maven
+name: Java Backend CI
 
 on:
   push:
@@ -11,11 +11,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up JDK 17
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-    - name: Build with Maven
-      run: mvn clean install -DskipTests
+      # Lấy code từ repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Cài đặt JDK 17 (hoặc đổi theo version project của bạn)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      # Di chuyển vào thư mục backend và build bằng Maven Wrapper
+      - name: Build with Maven
+        working-directory: ./backend
+        run: ./mvnw clean install
+
+      # (Tùy chọn) chạy test luôn
+      - name: Run tests
+        working-directory: ./backend
+        run: ./mvnw test
