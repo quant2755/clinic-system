@@ -1,40 +1,44 @@
-package com.example.controller;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import javax.validation.Valid;
-
 @RestController
-@RequestMapping("/api/prescriptions")
+@RequestMapping("/api/users")
 public class PrescriptionController {
 
-    // POST endpoint to save prescription
-    @PostMapping
-    public ResponseEntity<?> savePrescription(@Valid @RequestBody PrescriptionRequest request,
-                                              @RequestHeader("Authorization") String token) {
-        if (token == null || !token.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Invalid or missing token");
-        }
+    private final PrescriptionService prescriptionService;
 
-        if (request.getPatientId() == null || request.getMedication() == null) {
-            return ResponseEntity.badRequest()
-                    .body("Missing patientId or medication");
-        }
-
-        return ResponseEntity.ok("Prescription saved successfully");
+    @Autowired
+    public PrescriptionController(PrescriptionService prescriptionService) {
+        this.prescriptionService = prescriptionService;
     }
 
-    // inner request DTO
-    public static class PrescriptionRequest {
-        private Long patientId;
-        private String medication;
+    // Endpoint: /api/users/{user}/prescriptions/{token}
+    @PostMapping("/{user}/prescriptions/{token}")
+    public ResponseEntity<?> savePrescription(
+            @PathVariable String user,
+            @PathVariable String token,
+            @RequestBody PrescriptionDTO prescriptionDTO) {
 
-        public Long getPatientId() { return patientId; }
-        public void setPatientId(Long patientId) { this.patientId = patientId; }
+        // TODO: validate token (giả lập)
+        boolean valid = TokenValidator.isValid(user, token);
+        if (!valid) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid or expired token"));
+        }
 
-        public String getMedication() { return medication; }
-        public void setMedication(String medication) { this.medication = medication; }
+        // Validate dữ liệu cơ bản
+        if (prescriptionDTO == null || prescriptionDTO.getDoctorId() == null) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Missing required fields: doctorId"));
+        }
+
+        try {
+            Prescription saved = prescriptionService.savePrescription(prescriptionDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                    "user", user,
+                    "message", "Prescription saved successfully",
+                    "prescriptionId", saved.getId()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to save prescription: " + e.getMessage()));
+        }
     }
 }
