@@ -2,6 +2,7 @@ package com.example.clinic.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
@@ -18,6 +19,7 @@ public class Appointment {
     @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
 
+    @NotNull
     @Future
     private LocalDateTime appointmentTime;
 
